@@ -27,27 +27,27 @@ class TICMIDataAPI:
         else:
             return response.status_code, response.text
 
-    def request_index_weight(self, date, indexCode):
+    def request_index_weight(self, startDate, endDate, indexCode):
         params_index_weight = {
             "indexCode": indexCode,
-            "startDate": date,
-            "endDate": date
+            "startDate": startDate,
+            "endDate": endDate
         }
         return self.make_request(self.endpoints["index_weight"], params_index_weight)
 
-    def request_data_by_date(self, date, stock):
+    def request_data_by_date(self, startDate, endDate, stock, category):
         results = {}
 
         params_public_expose = {
             "secCode": stock,
-            "startDate": date,
-            "endDate": date,
+            "startDate": startDate,
+            "endDate": endDate,
             "tipeCalendar": "public-expose"
         }
         params_trading_data = {
             "secCode": stock,
-            "startDate": date,
-            "endDate": date,
+            "startDate": startDate,
+            "endDate": endDate,
             "granularity": "daily"
         }
         params_stock_news = {
@@ -55,8 +55,8 @@ class TICMIDataAPI:
             "sort": "terbaru",
             "page": "1",
             "pageSize": "5",
-            "startDate": date,
-            "endDate": date
+            "startDate": startDate,
+            "endDate": endDate
         }
 
         all_params_by_date = {
@@ -65,8 +65,11 @@ class TICMIDataAPI:
             "stock_news": params_stock_news
         }
 
-        for key, endpoint in all_params_by_date.items():
-            results[key] = self.make_request(self.endpoints[key], endpoint)
+        if category not in all_params_by_date:
+            raise ValueError(f"Unrecognized category: '{category}'. Recognized categories: 'trading_data', 'stock_news', 'public_expose'")
+        
+        endpoint = all_params_by_date[category]
+        results[category] = self.make_request(self.endpoints[category], endpoint)
 
         return results
 
