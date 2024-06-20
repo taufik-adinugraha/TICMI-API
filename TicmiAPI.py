@@ -70,7 +70,7 @@ class TICMIDataAPI:
 
         return results
 
-    def request_static_data(self, stock):
+    def request_static_data(self, stock, year):
         results = {}
 
         params_board_of_commissioners = {
@@ -82,7 +82,7 @@ class TICMIDataAPI:
         params_market_information = {
             "secCode": stock,
             "granularity": "quarterly",
-            "periode": "2023",  # Example year
+            "periode": year,
             "q": "1"
         }
         params_company_profile = {
