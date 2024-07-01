@@ -7,16 +7,22 @@ class TICMIDataAPI:
             'x-Auth-key': api_key
         }
         self.endpoints = {
+            "trading_data": "/direct/v1/saham/dp/eq/",
+            "index": "/direct/v1/saham/dp/ix/",
             "index_weight": "/direct/v1/saham/dp/iw/",
-            "public_expose": "/direct/v1/saham/ca/eq/",
+            "stock_news": "/direct/v1/news/eq",
+            "corporate_action": "/direct/v1/saham/ca/eq/",
+            "income_statement": "direct/v1/saham/lk/is/",
+            "balance_sheet": "direct/v1/saham/lk/bs/",
+            "cash_flow": "direct/v1/saham/lk/cf/",
+            "financial_ratios": "direct/v1/saham/fdr/rk/",
+            "market_information": "direct/v1/saham/fdr/ip/",
             "board_of_commissioners": "/direct/v1/saham/cp/boc/",
             "board_of_directors": "/direct/v1/saham/cp/bod/",
-            "trading_data": "/direct/v1/saham/dp/eq/",
-            "market_information": "/direct/v1/saham/fdr/ip/",
             "company_profile": "/direct/v1/saham/cp/pr/",
             "company_address": "/direct/v1/saham/cp/add/",
             "holding_composition": "/direct/v1/saham/cp/hc/",
-            "stock_news": "/direct/v1/news/"
+            "share_holders": "/direct/v1/saham/cp/sh/"
         }
 
     def make_request(self, endpoint, params):
@@ -27,88 +33,94 @@ class TICMIDataAPI:
         else:
             return response.status_code, response.text
 
-    def request_index_weight(self, startDate, endDate, indexCode):
-        params_index_weight = {
+    def index(self, startDate, endDate, indexCode):
+        params = {
+            "indexCode": indexCode,
+            "startDate": startDate,
+            "endDate": endDate,
+            "granularity": "daily"
+        }
+        return self.make_request(self.endpoints["index"], params)
+
+    def index_weight(self, startDate, endDate, indexCode):
+        params = {
             "indexCode": indexCode,
             "startDate": startDate,
             "endDate": endDate
         }
-        return self.make_request(self.endpoints["index_weight"], params_index_weight)
+        return self.make_request(self.endpoints["index_weight"], params)
 
-    def request_data_by_date(self, startDate, endDate, stock, category):
-        results = {}
-
-        params_public_expose = {
-            "secCode": stock,
-            "startDate": startDate,
-            "endDate": endDate,
-            "tipeCalendar": "public-expose"
-        }
-        params_trading_data = {
+    def trading(self, startDate, endDate, stock):
+        params = {
             "secCode": stock,
             "startDate": startDate,
             "endDate": endDate,
             "granularity": "daily"
         }
-        params_stock_news = {
-            "filter": "emiten",
-            "sort": "terbaru",
-            "page": "1",
-            "pageSize": "5",
-            "startDate": startDate,
-            "endDate": endDate
-        }
+        return self.make_request(self.endpoints["trading_data"], params)
 
-        all_params_by_date = {
-            "public_expose": params_public_expose,
-            "trading_data": params_trading_data,
-            "stock_news": params_stock_news
-        }
+    def corporate_action(self, startDate, endDate, stock, action_type):
+        action_types = ['ipo', 'public_expose', 'rups', 'rupslb', 'dividen', 'stock-bonus', 'stock_split', 'right', 'waran', 'konversi-waran']
+        if action_type not in action_types:
+            print(f"recognized action_type: {action_types}")
+        else:
+            params = {
+                "secCode": stock,
+                "startDate": startDate,
+                "endDate": endDate,
+                "tipeCalendar": action_type
+            }
+            return self.make_request(self.endpoints["corporate_action"], params)
 
-        if category not in all_params_by_date:
-            raise ValueError(f"Unrecognized category: '{category}'. Recognized categories: 'trading_data', 'stock_news', 'public_expose'")
-        
-        endpoint = all_params_by_date[category]
-        results[category] = self.make_request(self.endpoints[category], endpoint)
-
-        return results
-
-    def request_static_data(self, stock, year):
-        results = {}
-
-        params_board_of_commissioners = {
-            "secCode": stock
-        }
-        params_board_of_directors = {
-            "secCode": stock
-        }
-        params_market_information = {
+    def stock_news(self, startDate, endDate, stock):
+        params = {
             "secCode": stock,
-            "granularity": "quarterly",
-            "periode": year,
-            "q": "1"
+            "startDate": startDate,
+            "endDate": endDate,
+            "page": "1",
+            "pageSize": "20",
+        } 
+        return self.make_request(self.endpoints["stock_news"], params)
+
+    def financial_report(self, stock, year, quarter, report_type):
+        report_types = ["income_statement", "balance_sheet", "cash_flow", "financial_ratios"]
+        if report_type not in report_types:
+            print(f"recognized action_type: {report_types}")
+        else:
+            params = {
+                "secCode": stock,
+                "granularity": "Quarterly",
+                "periode": str(year),
+                "q": str(quarter),
+            }
+            return self.make_request(self.endpoints[report_type], params)
+
+    def market_information(self, stock, year, quarter):
+        params = {
+            "secCode": stock,
+            "granularity": "Quarterly",
+            "periode": str(year),
+            "q": str(quarter),
         }
-        params_company_profile = {
-            "secCode": stock
-        }
-        params_company_address = {
+        return self.make_request(self.endpoints["market_information"], params)
+
+    def static_data(self, stock):
+        results = {}
+        param = {
             "secCode": stock
         }
         params_holding_composition = {
             "secCode": stock,
             "granularity": "1"
         }
-
         all_params_static = {
-            "board_of_commissioners": params_board_of_commissioners,
-            "board_of_directors": params_board_of_directors,
-            "market_information": params_market_information,
-            "company_profile": params_company_profile,
-            "company_address": params_company_address,
-            "holding_composition": params_holding_composition
+            "board_of_commissioners": param,
+            "board_of_directors": param,
+            "company_profile": param,
+            "company_address": param,
+            "holding_composition": params_holding_composition,
+            "share_holders": param,
         }
-
-        for key, endpoint in all_params_static.items():
-            results[key] = self.make_request(self.endpoints[key], endpoint)
-
+        for key, params in all_params_static.items():
+            results[key] = self.make_request(self.endpoints[key], params)
         return results
